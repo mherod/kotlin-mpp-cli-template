@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel target="11">
+      <module name="com.myunidays.udb.udb.commonMain" target="1.6" />
+      <module name="com.myunidays.udb.udb.commonTest" target="1.6" />
+      <module name="com.myunidays.udb.udb.jvmMain" target="1.6" />
+      <module name="com.myunidays.udb.udb.jvmTest" target="1.6" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

@@ -1,0 +1,27 @@
+package dev.herod.kmpp
+
+import kotlinx.coroutines.flow.onEmpty
+import kotlinx.coroutines.flow.reduce
+import kotlinx.coroutines.flow.singleOrNull
+
+fun lookupTool(tool: String, homeDir: String): String = runBlocking {
+    val easy = exec("which $tool").singleOrNull().orEmpty()
+    if (easy.startsWith("/") && easy.endsWith(tool)) {
+        return@runBlocking easy
+    }
+    val searchPath = envVar(homeDir)
+    if (searchPath.isNullOrBlank()) {
+        error("couldn't find $tool. try setting $homeDir environmental variable")
+    }
+    return@runBlocking findFile(
+        searchPath = searchPath,
+        fileName = tool
+    ).onEmpty {
+        error("couldn't find $tool. Check it is installed in your $homeDir")
+    }.reduce { accumulator, value ->
+        when {
+            value.length < accumulator.length -> value
+            else -> accumulator
+        }.trim()
+    }
+}
