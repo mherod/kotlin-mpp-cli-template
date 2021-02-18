@@ -1,13 +1,13 @@
-package dev.herod.kmpp
+package dev.herod.kmpp.files
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import java.io.File
 
-actual fun findFile(searchPath: String, fileName: String): Flow<String> {
+actual fun findFile(searchPath: String, fileName: String): Flow<FileMp> {
     return File(searchPath)
         .walkTopDown()
         .filter { it.isFile && it.name == fileName }
-        .map { it.absolutePath }
+        .map { file(it.absolutePath) }
         .asFlow()
 }

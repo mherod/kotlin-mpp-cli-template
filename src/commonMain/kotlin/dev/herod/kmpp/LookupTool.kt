@@ -1,5 +1,7 @@
 package dev.herod.kmpp
 
+import dev.herod.kmpp.files.findFile
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEmpty
 import kotlinx.coroutines.flow.reduce
 import kotlinx.coroutines.flow.singleOrNull
@@ -16,7 +18,9 @@ fun lookupTool(tool: String, homeDir: String): String = runBlocking {
     return@runBlocking findFile(
         searchPath = searchPath,
         fileName = tool
-    ).onEmpty {
+    ).map { file ->
+        file.absolutePath
+    }.onEmpty {
         error("couldn't find $tool. Check it is installed in your $homeDir")
     }.reduce { accumulator, value ->
         when {
