@@ -1,44 +1,45 @@
 package dev.herod.kmpp.files
 
 import dev.herod.kmpp.exec
-import dev.herod.kmpp.runBlocking
-import dev.herod.kx.flow.any
-import dev.herod.kx.splitOnSpacing
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
+import platform.posix.*
 
-actual fun file(absolutePath: String): FileMp = FileMpPosix(absolutePath = absolutePath)
+@OptIn(FlowPreview::class, ExperimentalUnsignedTypes::class)
+actual fun file(absolutePath: String): KFile = KFilePosix(absolutePath = absolutePath)
 
-@OptIn(FlowPreview::class)
-data class FileMpPosix(
+@FlowPreview
+@ExperimentalUnsignedTypes
+data class KFilePosix(
     override val absolutePath: String,
-) : FileMp {
+) : KFile {
 
-    override fun getParent(): FileMp = when {
+    override fun getParent(): KFile = when {
         isFile() -> file(absolutePath = absolutePath.substringBeforeLast("/"))
         isDirectory() -> file(absolutePath = absolutePath.substringBeforeLast("/"))
         else -> error("can't determine parent")
     }
 
-    override fun isDirectory(): Boolean = runBlocking {
-        exec("stat -x $absolutePath").any { "FileType: Directory" in it }
-    }
+    override fun exists(): Boolean = access(absolutePath, F_OK) != -1
 
-    override fun isFile(): Boolean = runBlocking {
-        exec("stat -x $absolutePath").any { "FileType: Regular File" in it }
-    }
+    override fun isDirectory(): Boolean = mode() - S_IFDIR.toUInt() < 1000u
 
-    override fun listFiles(): Flow<FileMp> = when {
+    override fun isFile(): Boolean = mode() - S_IFREG.toUInt() < 1000u
+
+    override fun listFiles(): Flow<KFile> = when {
         isFile() -> flowOf(this)
         isDirectory() -> exec(command = "ls \"$absolutePath\"").map { file("$absolutePath/$it") }
         else -> emptyFlow()
     }
 
-    override fun size(): Long = runBlocking {
-        exec("ls -l $absolutePath")
-            .single()
-            .splitOnSpacing()[4]
-            .toLong()
+    override fun size(): Long = memScoped {
+        alloc<stat>().let { stat ->
+            stat(absolutePath, stat.ptr)
+            stat.st_size
+        }
     }
 
     override fun readLines(): Flow<String> {
@@ -47,5 +48,12 @@ data class FileMpPosix(
             .flatMapConcat { s ->
                 s.split("\n".toRegex()).asFlow()
             }
+    }
+
+    private fun mode(): UShort = memScoped {
+        alloc<stat>().let { stat ->
+            stat(absolutePath, stat.ptr)
+            stat.st_mode
+        }
     }
 }

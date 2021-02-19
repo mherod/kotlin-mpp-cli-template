@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 
-actual fun findFile(searchPath: String, fileName: String): Flow<FileMp> {
+actual fun findFile(searchPath: String, fileName: String): Flow<KFile> {
     return exec(
         command = "find \"$searchPath\" -type f -name \"$fileName\""
     ).filter { output ->

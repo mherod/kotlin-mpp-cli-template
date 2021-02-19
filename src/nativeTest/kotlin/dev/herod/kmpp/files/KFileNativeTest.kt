@@ -5,7 +5,7 @@ import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-class FileMpJvmTest : FileMpTest {
+class KFileNativeTest : KFileTest {
 
     @Test
     override fun readLinesTest() {
@@ -20,7 +20,7 @@ class FileMpJvmTest : FileMpTest {
     @Test
     override fun sizeTest() {
         val file = file(absolutePath = "/etc/hosts")
-        assertTrue { file.size() > 0 }
+        assertTrue { file.size() > 200 }
     }
 
     @Test
@@ -33,5 +33,16 @@ class FileMpJvmTest : FileMpTest {
         assertTrue {
             files.size > 1 && file !in files
         }
+    }
+
+    @Test
+    override fun isFileTest() {
+        val file = file(absolutePath = "/etc/hosts")
+        assertTrue(file.isFile())
+    }
+
+    override fun isDirectoryTest() {
+        val file = file(absolutePath = "/etc")
+        assertTrue(file.isDirectory())
     }
 }
