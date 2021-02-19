@@ -1,9 +1,8 @@
 package dev.herod.kmpp.files
 
 import dev.herod.kmpp.exec
-import kotlinx.cinterop.alloc
-import kotlinx.cinterop.memScoped
-import kotlinx.cinterop.ptr
+import dev.herod.kx.flow.loop
+import kotlinx.cinterop.*
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import platform.posix.*
@@ -42,12 +41,23 @@ data class KFilePosix(
         }
     }
 
-    override fun readLines(): Flow<String> {
-        // using cat is temporary
-        return exec("cat $absolutePath")
-            .flatMapConcat { s ->
-                s.split("\n".toRegex()).asFlow()
+    override fun readLines(): Flow<String> = flow {
+        fopen(absolutePath, "r")?.let { pointer ->
+            memScoped {
+                val readBufferLength = 1024
+                val buffer = allocArray<ByteVar>(readBufferLength)
+                emitAll(
+                    flow = loop().map {
+                        fgets(buffer, readBufferLength, pointer)?.toKString()
+                    }.takeWhile { s ->
+                        s != null
+                    }.flatMapConcat {
+                        it?.split("\n".toRegex())?.asFlow() ?: emptyFlow()
+                    }
+                )
             }
+            fclose(pointer)
+        }
     }
 
     private fun mode(): UShort = memScoped {
